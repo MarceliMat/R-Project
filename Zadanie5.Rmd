@@ -1,0 +1,123 @@
+---
+title: "Zadanie 5"
+author: "Marceli Matejek"
+date: "2024-07-16"
+output: html_document
+---
+
+```{r Wczytanie dancyh}
+dane = read.csv("D:/Studia/IV semestr/Modele regresji/projekt/Zadanie5/Dane_29.csv",sep=";")
+attach(dane)
+
+
+```
+
+##Ad a)
+```{r Model}
+model=lm(y~x1+x2+x3+x4+x5+x6)
+plot(model)
+summary(model)
+
+
+```
+##Ad b)
+```{r Diagnostyka}
+model2=step(model)
+summary(model2)
+shapiro.test(resid(model2))
+lmtest::bgtest(model2)
+lmtest::bptest(model2)
+lmtest::gqtest(model2,alternative="two.sided")
+plot(model2)
+which(cooks.distance(model2)>4/97)
+dane2v2=dane[-c(43,57,62,83,86),]
+model2v2=lm(dane2v2$y~dane2v2$x3+dane2v2$x4)
+summary(model2v2)
+shapiro.test(resid(model2v2))
+lmtest::bgtest(model2v2)
+lmtest::bptest(model2v2)
+lmtest::gqtest(model2v2,alternative="two.sided")
+plot(model2v2)
+
+
+
+
+```
+#Warosci p testów są większe od wartosci 0.05 przy przyjetej istotnosci rozklad reszt jest normalny oraz wykresy diagnostyczne są odpowiednie.
+
+##Ad c)
+```{r Zaleznosc liniowa zmiennych}
+summary(lm(dane$x1~dane$x2+dane$x3+dane$x4+dane$x5+dane$x6))$r.squared
+summary(lm(dane$x2~dane$x1+dane$x3+dane$x4+dane$x5+dane$x6))$r.squared
+summary(lm(dane$x3~dane$x1+dane$x2+dane$x4+dane$x5+dane$x6))$r.squared
+summary(lm(dane$x4~dane$x1+dane$x2+dane$x3+dane$x5+dane$x6))$r.squared
+summary(lm(dane$x5~dane$x1+dane$x2+dane$x3+dane$x4+dane$x6))$r.squared
+summary(lm(dane$x6~dane$x1+dane$x2+dane$x3+dane$x4+dane$x5))$r.squared
+#Największe współczynnik mamy dla x1 więc go usuwam
+summary(lm(dane$x2~dane$x3+dane$x4+dane$x5+dane$x6))$r.squared
+summary(lm(dane$x3~dane$x2+dane$x4+dane$x5+dane$x6))$r.squared
+summary(lm(dane$x4~dane$x2+dane$x3+dane$x5+dane$x6))$r.squared
+summary(lm(dane$x5~dane$x2+dane$x3+dane$x4+dane$x6))$r.squared
+summary(lm(dane$x6~dane$x2+dane$x3+dane$x4+dane$x5))$r.squared
+#Teraz usunę x4
+summary(lm(dane$x2~dane$x3+dane$x5+dane$x6))$r.squared
+summary(lm(dane$x3~dane$x2+dane$x4+dane$x6))$r.squared
+summary(lm(dane$x5~dane$x2+dane$x3+dane$x6))$r.squared
+summary(lm(dane$x6~dane$x2+dane$x3+dane$x5))$r.squared
+#Następnie usuwam x5
+summary(lm(dane$x2~dane$x3+dane$x6))$r.squared
+summary(lm(dane$x3~dane$x2+dane$x6))$r.squared
+summary(lm(dane$x6~dane$x2+dane$x3))$r.squared
+#Zostawiam model z trzema zmiennymi 
+```
+##Ad d)
+
+```{r Metoda eliminacji}
+#Poziom istototnosci 0.05
+model3=lm(dane$y~dane$x2+dane$x3+dane$x6)
+summary(model3)$coefficients[-1,4]
+#Największą wartość p ma zmienna x3 więc ją usuwam
+model4=lm(dane$y~dane$x2+dane$x6)
+summary(model4)
+```
+
+
+```{r Diagnostyka modelu}
+summary(model4)
+shapiro.test(resid(model4))
+lmtest::bgtest(model4)
+lmtest::bptest(model4)
+lmtest::gqtest(model4,alternative="two.sided")
+plot(model4)
+which(cooks.distance(model4)>4/97)
+dane3=dane[-c(13,47,73,81,93),]
+model5=lm(dane3$y~dane3$x2+dane3$x6)
+summary(model5)
+shapiro.test(resid(model5))
+lmtest::bgtest(model5)
+lmtest::bptest(model5)
+lmtest::gqtest(model5,alternative="two.sided")
+plot(model5)
+
+
+```
+##Ad e)
+```{r Podział zbiorów}
+uczacy = caret::createDataPartition(dane$y, p = 0.7, list = FALSE)
+dane.u = dane[uczacy,]
+dane.t = dane[-uczacy,]
+
+model_1 = lm(dane.u$y~dane.u$x3+dane.u$x4)
+model_2 = lm(dane.u$y~dane.u$x2+dane.u$x6)
+
+pred_1 = predict(model_1, dane.u)
+SSE_1 = sum((dane.u$y - pred_1)^2)
+
+pred_2 = predict(model_2, dane.u)
+SSE_2 = sum((dane.u$y - pred_2)^2)
+
+SSE_1
+SSE_2
+```
+##Podsumowanie
+#Pierwszy model jest  znacząco lepszy na podstawie wyniku i porównania wartości SSE . Co można było również zauważyć już na podstawie porónania wartości R^2 we wcześniejszych testach oraz przy porównaniu wykresów diagnostycznych obu modeli.

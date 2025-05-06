@@ -1,0 +1,147 @@
+---
+title: "Zadanie 4 "
+author: "Marceli Matejek"
+date: "2024-07-10"
+output: html_document
+---
+
+```{r Wczytanie danych}
+dane = read.csv("D:/Studia/IV semestr/Modele regresji/projekt/Zadanie4/dane29_test.csv",sep=";")
+colnames(dane) = c("X", "Y")
+
+
+
+```
+
+## Ad a)
+```{r Wykresy}
+plot(dane$X,dane$Y)
+plot(lm(dane$Y~dane$X))
+```
+
+##Ad b)
+```{r Model wielomianowy}
+ut.lm=lm(dane$Y~dane$X+I(dane$X^2)+I(dane$X^3))
+summary(ut.lm)
+plot(ut.lm)
+
+
+```
+#Ad c)
+```{r Diagnostyka}
+cooks.distance(ut.lm)
+which(cooks.distance(ut.lm)>4/98)
+dane2=dane[-c(14,27,51,52,87,94),]
+ut2.lm=lm(dane2$Y~dane2$X+I(dane2$X^2)+I(dane2$X^3))
+summary(ut2.lm)
+plot(ut2.lm)
+cooks.distance(ut2.lm)
+which(cooks.distance(ut2.lm)>4/92)
+dane3=dane2[-c(70,93),]
+
+ut3.lm=lm(dane3$Y~dane3$X+I(dane3$X^2)+I(dane3$X^3))
+summary(ut3.lm)
+plot(ut3.lm)
+
+cooks.distance(ut3.lm)
+which(cooks.distance(ut3.lm)>4/90)
+dane4=dane3[-c(1,65,71),]
+ut4.lm=lm(dane4$Y~dane4$X+I(dane4$X^2)+I(dane4$X^3))
+summary(ut4.lm)
+plot(ut4.lm)
+
+cooks.distance(ut4.lm)
+which(cooks.distance(ut4.lm)>4/87)
+dane5=dane4[-c(1,46,63,87),]
+ut5.lm=lm(dane5$Y~dane5$X+I(dane5$X^2)+I(dane5$X^3))
+summary(ut5.lm)
+plot(ut5.lm)
+
+cooks.distance(ut5.lm)
+which(cooks.distance(ut5.lm)>4/83)
+dane6=dane5[-c(15,57,63),]
+ut6.lm=lm(dane6$Y~dane6$X+I(dane6$X^2)+I(dane6$X^3))
+summary(ut6.lm)
+plot(ut6.lm)
+
+cooks.distance(ut6.lm)
+which(cooks.distance(ut6.lm)>4/80)
+
+dane7=dane6[-c(9,25,29,35,73),]
+ut7.lm=lm(dane7$Y~dane7$X+I(dane7$X^2)+I(dane7$X^3))
+summary(ut7.lm)
+plot(ut7.lm)
+
+cooks.distance(ut7.lm)
+which(cooks.distance(ut7.lm)>4/75)
+
+dane8=dane7[-c(27,57),]
+ut8.lm=lm(dane8$Y~dane8$X+I(dane8$X^2)+I(dane8$X^3))
+summary(ut8.lm)
+plot(ut8.lm)
+```
+
+```{r Dopasowanie linii trendu }
+c1=coef(ut8.lm)[1]
+c2=coef(ut8.lm)[2]
+c3=coef(ut8.lm)[3]
+c4=coef(ut8.lm)[4]
+plot(dane8$X,dane8$Y)
+curve(c1+c2*x+c3*x^2+c4*x^3,add=TRUE)
+shapiro.test(resid(ut8.lm))
+lmtest::bgtest(ut8.lm)
+lmtest::bptest(ut8.lm)
+lmtest::gqtest(ut8.lm,alternative="two.sided")
+summary(ut8.lm)
+
+
+
+```
+#Warosci p testów są większe od wartosci 0.05 przy przyjetej istotnosci rozklad reszt jest normalny
+##Ad d)
+```{r Nowy model }
+plot(dane$X,dane$Y)
+model=lm(dane$Y~dane$X+abs(dane$X-0.3)+abs(dane$X-0.7))
+summary(model)
+plot(model)
+```
+#Model jest bardzo dobrze dopasowany na podstawie wartości R^2 oraz wykresów diagnostycznych więc nie widzę potrzeby usuwania obserwacji i  przechodzę do dopasowywania krzywej oraz finalnych testów
+##Ad e)
+```{r Dopasowanie linii trendu i finalne testy}
+d1=coef(model)[1]
+d2=coef(model)[2]
+d3=coef(model)[3]
+d4=coef(model)[4]
+plot(dane$X,dane$Y)
+curve(d1+d2*x+d3*abs(x-0.3)+d4*abs(x-0.7),add=TRUE)
+shapiro.test(resid(model))
+lmtest::bgtest(model)
+lmtest::bptest(model)
+lmtest::gqtest(model,alternative="two.sided")
+summary(model)
+
+```
+##Ad f)
+```{r Zbiory uczace , testowe i suma kwadratów błędu}
+uczacy = caret::createDataPartition(dane$Y, p = 0.7, list = FALSE)
+dane.u = dane[uczacy,]
+dane.t = dane[-uczacy,]
+
+
+model_1 = lm(dane.u$Y~dane.u$X+abs(dane.u$X-0.3)+abs(dane.u$X-0.7))
+
+model_2 = lm(dane.u$Y~dane.u$X+I(dane.u$X^2)+I(dane.u$X^3))
+
+
+pred_1 = predict(model_1, dane.u)
+SSE_1 = sum((dane.u$Y - pred_1)^2)
+
+
+pred_2 = predict(model_2, dane.u)
+SSE_2 = sum((dane.u$Y - pred_2)^2)
+
+SSE_1
+SSE_2
+```
+##Podsumowanie 
+#Model pierwszy jest  lepszy od drugiego co widzimy na podstawie porównania wartości SSE wykonanej wyżej.
